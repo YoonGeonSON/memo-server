@@ -42,31 +42,38 @@ class MemoListResource(Resource) :
         
         return {"result" : "success"} , 200
     
+    @jwt_required()
     def get(self) :
+
+        user_id = get_jwt_identity()
+        # 쿼리스트링 (쿼리 파라미터)를 통해서
+        # 데이터를 받아온다
+        offset = request.args.get('offset')
+        limit = request.args.get('limit')
 
         try :
 
             connection = get_connection()
 
-            query = '''select *
-                        from memo;'''
+            query = '''select id,title, date, content
+                        from memo
+                        where userId = %s
+                        order by date
+                        limit ''' + str(offset) +''','''+str(limit) +''' ;'''
+            record = (user_id, )
             
             cursor = connection.cursor(dictionary= True)
 
-            cursor.execute(query)
+            cursor.execute(query, record)
             
             result_list = cursor.fetchall()
 
-            print(result_list)
+            
 
             i=0
             for row in result_list :
-                result_list[i]['createdAt'] = row['createdAt'].isoformat()
-                result_list[i]['updatedAt'] = row['updatedAt'].isoformat()
                 result_list[i]['date'] = row['date'].isoformat()
                 i = i + 1
-
-            print(result_list)
 
             cursor.close()
             connection.close()
